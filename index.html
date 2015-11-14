@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bantu Asap Dashboard</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
+</head>
+<body ng-app="BantuAsapApp">
+    <div class="wrapper" ng-controller="AppCtrl">
+        <nav class="navbar navbar-fixed-top header">
+            <div class="col-md-12">
+                <div class="navbar-header">
+
+                    <a href="#" class="navbar-brand">Bantu Asap</a>
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse1">
+                        <i class="glyphicon glyphicon-search"></i>
+                    </button>
+
+                </div>
+                <div class="collapse navbar-collapse" id="navbar-collapse1">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="https://play.google.com/store/apps/details?id=com.ssceria.bantuasap" target="_ext">Download Play Store</a></li>
+                    </ul>
+                </div>  
+            </div>  
+        </nav>
+        <div class="navbar navbar-default" id="subnav">
+            <div class="col-md-12">
+                <div class="navbar-header">
+
+                </div>
+                <div class="collapse navbar-collapse" id="navbar-collapse2">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="active"><a href="#">Korban</a></li>
+                        <li><a href="need.html" role="button" data-toggle="modal">Kebutuhan</a></li>
+                        <li><a href="smoke.html" role="button" data-toggle="modal">Kadar Asap</a></li>
+                    </ul>
+                </div>  
+            </div> 
+        </div>
+        <div class="map">
+            <ui-gmap-google-map center='map.center' zoom='map.zoom'></ui-gmap-google-map>
+        </div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading"><h4>Data Korban</h4></div>
+                        <div class="panel-body">
+                            <table class="table">
+                                <thead>
+                                    <th>
+                                        <td>Nama</td>
+                                        <td>Lokasi</td>
+                                        <td>Umur</td>
+                                        <td>Status</td>
+                                        <td>Foto</td>
+                                        <td>Menu</td>
+                                    </th>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="victim in victims track by $index">
+                                        <td>{{}}</td>
+                                        <td>{{victim.name}}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-xs btn-default">
+                                                <span class="fa fa-search"></span> Lihat Posisi
+                                            </a>
+                                        </td>
+                                        <td>{{victim.age}}</td>
+                                        <td>{{victim.status}}</td>
+                                        <td><img ng-src="{{victim.photo}}" alt=""/></td>
+                                        <td>
+                                            <a href="#" class="btn btn-xs btn-default" ng-click="delete(victim.id)">
+                                                <span class="fa fa-trash"></span> Hapus    
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src='//maps.googleapis.com/maps/api/js?sensor=false'></script>
+    <script src="assets/js/firebase.js"></script>
+    <script src="assets/js/lodash.min.js"></script>
+    <script src="assets/js/angular.min.js"></script>
+    <script src="assets/js/angular-simple-logger.js"></script>
+    <script src="assets/js/angular-google-maps.min.js"></script>
+    <script src="assets/js/angularfire.min.js"></script>
+    <script>
+        angular.module('BantuAsapApp', ['uiGmapgoogle-maps', 'firebase'])
+            .controller('AppCtrl', function ($scope, $firebaseArray) {
+                var ref = new Firebase("https://bantu-asap.firebaseio.com");
+                var lat  = -6.87043;
+                var long = 107.58673;
+  
+                $scope.victims = $firebaseArray(ref.child('victims'));
+                $scope.map = { center: { latitude: lat, longitude: long }, zoom: 13 };
+                $scope.delete = function(id) {
+                    $scope.victims.$remove(id);
+                };
+            });
+    </script>
+</body>
+</html>
