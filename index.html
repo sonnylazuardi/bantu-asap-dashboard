@@ -41,7 +41,24 @@
             </div> 
         </div>
         <div class="map">
-            <ui-gmap-google-map center='map.center' zoom='map.zoom'></ui-gmap-google-map>
+            <ui-gmap-google-map center="map.center" zoom="map.zoom" draggable="true" options="options">
+                <ui-gmap-marker 
+                    ng-repeat="victim in victimSet" 
+                    coords="victim.coords" 
+                    idkey="victim.id" 
+                    options="victim.options"
+                    icon="victim.data.icon">
+                      <ui-gmap-window options="windowOptions" closeClick="closeClick()">
+                        <div>
+                          <p ng-show="victim.data.photo != ''"><img ng-src="{{victim.data.photo}}" width="150px"/></p>
+                          <p><b>Nama:</b> {{victim.data.name}}</p>
+                          <p><b>Status:</b> {{victim.data.status}} <i class="ion-alert-circled alert-{{victim.alertColor}}"></i></p>
+                          <p><b>Kebutuhan:</b> {{victim.data.need.name}}</p>
+                          <p><a href="#/victim/{{victim.id}}" class="button button-small button-block button-positive">Detail</a></p>
+                        </div>
+                      </ui-gmap-window>
+                </ui-gmap-marker>
+            </ui-gmap-google-map>
         </div>
         <div class="container">
             <div class="row">
@@ -61,7 +78,7 @@
                                     </th>
                                 </thead>
                                 <tbody>
-                                    <tr ng-repeat="victim in victims track by $index">
+                                    <tr ng-repeat="victim in victims | orderBy:'$index':true">
                                         <td>{{}}</td>
                                         <td>{{victim.name}}</td>
                                         <td>
@@ -73,7 +90,7 @@
                                         <td>{{victim.status}}</td>
                                         <td><img ng-src="{{victim.photo}}" alt=""/></td>
                                         <td>
-                                            <a href="#" class="btn btn-xs btn-default" ng-click="delete(victim.id)">
+                                            <a href class="btn btn-xs btn-default" ng-click="scope.delete(victim)">
                                                 <span class="fa fa-trash"></span> Hapus    
                                             </a>
                                         </td>
@@ -95,16 +112,90 @@
     <script src="assets/js/angular-google-maps.min.js"></script>
     <script src="assets/js/angularfire.min.js"></script>
     <script>
+        var FBURL = 'https://bantu-asap.firebaseio.com';
+        var filter = 'Coba';
         angular.module('BantuAsapApp', ['uiGmapgoogle-maps', 'firebase'])
-            .controller('AppCtrl', function ($scope, $firebaseArray) {
-                var ref = new Firebase("https://bantu-asap.firebaseio.com");
+            .controller('AppCtrl', function ($scope, $firebaseArray, $http) {
+
+                var ref = new Firebase(FBURL + "/victims");
                 var lat  = -6.87043;
                 var long = 107.58673;
   
-                $scope.victims = $firebaseArray(ref.child('victims'));
-                $scope.map = { center: { latitude: lat, longitude: long }, zoom: 13 };
-                $scope.delete = function(id) {
-                    $scope.victims.$remove(id);
+                $scope.victims = $firebaseArray(ref);
+                $scope.map = { center: { latitude: lat, longitude: long }, zoom: 14 };
+                $scope.options = {
+                    scrollwheel: false,
+                    overviewMapControl: false,
+                    panControl: true,
+                    scaleControl: true,
+                    scrollwheel: false,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    zoomControl: true
+                };
+
+                function flattenArray(data) {
+                    var list = [];
+                    for(key in data){
+                      if(!data[key]) continue;
+                      data[key].id = key;
+                      list.push(data[key]);
+                    }
+                    return list;
+                }
+
+                $scope.victimSet = [];
+                $scope.listNeed = [];
+                $http.get(FBURL + "/needs.json").success(function (needs){
+                    $scope.listNeed = flattenArray(needs);
+                });
+                
+                $scope.$watch('victims', function() {
+                    var victims = [];
+                    angular.forEach($scope.victims, function (value, key) {
+
+                        if(value.status == "Gejala"){
+                          alertColor = "yellow";
+                        } else if(value.status == "Parah"){
+                          alertColor = "orange";
+                        } else if(value.status == "Kritis"){
+                          alertColor = "red";
+                        }
+
+                        var item = value;
+                        item.id = key;
+                        item.need = _.findWhere($scope.listNeed, {id: item.need_id});
+                        item.icon = '';
+
+                        if (filter == 'Kebutuhan') {
+                          if (item.need) {
+                            item.icon = item.need.icon_pin;
+                          }
+                        } else {
+                          item.icon = 'img/help-' + alertColor + '.png';
+                        }
+
+                        victims.push({
+                          id: key,
+                          coords: {
+                            latitude: parseFloat(item.latitude),
+                            longitude: parseFloat(item.longitude)
+                          },
+                          options: { draggable: false },
+                          data: item,
+                          alertColor: alertColor
+                        });
+                    });
+                    $scope.victimSet = victims;
+                    console.log($scope.victimSet);
+                }, true);
+
+                $scope.scope = {
+                    delete: function(victim) {
+                        $scope.victims.$remove(victim).then(function() {
+                            console.log(id);
+                        });
+                    }
                 };
             });
     </script>
